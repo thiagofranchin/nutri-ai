@@ -1,0 +1,56 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="64"
+  height="64"
+  viewBox="0 0 64 64"
+  fill="none"
+>
+  <defs>
+    <linearGradient id="quantum-rose-bg" x1="10" x2="54" y1="8" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff0f8" />
+      <stop offset="1" stop-color="#ffc1e3" />
+    </linearGradient>
+    <linearGradient id="quantum-rose-stroke" x1="16" x2="49" y1="14" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e6067a" />
+      <stop offset="1" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#quantum-rose-bg)" />
+  <path
+    d="M20 50h24"
+    stroke="url(#quantum-rose-stroke)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+  <path
+    d="M32 50a21 21 0 0 0 21-21H11a21 21 0 0 0 21 21Z"
+    stroke="url(#quantum-rose-stroke)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+  <path
+    d="M30.56 29a5.6 5.6 0 0 1-.94-11.14 5.6 5.6 0 0 1 7.46-6.46 5.6 5.6 0 0 1 8.1-1.47 5.6 5.6 0 0 1 7.86 7.86 5.6 5.6 0 0 1-2.57 8.63 5.87 5.87 0 0 1 .08 2.58"
+    transform="translate(-5 -4)"
+    stroke="url(#quantum-rose-stroke)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+  <path
+    d="m35 25 9-9"
+    stroke="url(#quantum-rose-stroke)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+  <path
+    d="M28.28 18.94A9.3 9.3 0 0 0 12 25.36c0 1.7.47 3.3 1.27 4.64"
+    transform="translate(0 2)"
+    stroke="url(#quantum-rose-stroke)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+</svg>

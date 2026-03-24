@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Controller, type DefaultValues, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   dietObjectiveLabels,
   dietObjectiveValues,
@@ -140,19 +141,22 @@ export function DietForm({ onSubmit, initialValues, onClear }: DietformProps) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full lg:w-2/3 max-w-3xl border-0">
-        <div className="p-8">
+        <div className="relative p-8">
+          <div className="absolute right-4 top-4">
+            <ThemeToggle />
+          </div>
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4 mx-auto">
-              <Utensils className="w-14 h-14 text-green-500" />
+              <Utensils className="h-14 w-14 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-green-500 mb-2">
+            <h1 className="mb-2 text-3xl font-bold text-primary">
               Calcule sua dieta
             </h1>
           </div>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <h3 className="flex items-center text-lg font-semibold text-foreground">
                 Dados pessoais
               </h3>
             </div>

@@ -118,18 +118,18 @@ export function DietGenerator({
 
         {output && (
           <div className="bg-card rounded-lg p-6 border border-border max-h-125 overflow-y-auto">
-            <div className="prose prose-sm max-w-none">
+            <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-ul:text-foreground prose-ol:text-foreground">
               <ReactMarkdown
                 components={{
                   h2: ({ node, ...props }) => (
                     <h2
-                      className="text-xl font-bold text-green-600 my-1"
+                      className="my-1 text-xl font-bold text-primary"
                       {...props}
                     />
                   ),
                   h1: ({ node, ...props }) => (
                     <h1
-                      className="text-2xl font-bold text-zinc-900 mb-1"
+                      className="mb-1 text-2xl font-bold text-foreground"
                       {...props}
                     />
                   ),
