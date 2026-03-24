@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
-import { Utensils } from "lucide-react";
+import { Utensils, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Field,
   FieldContent,
+  FieldDescription,
   FieldError,
   FieldLabel,
 } from "@/components/ui/field";
@@ -17,47 +20,126 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Controller, useForm } from "react-hook-form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Controller, type DefaultValues, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
+import {
+  dietObjectiveLabels,
+  dietObjectiveValues,
+  DietData,
+  dietTypeLabels,
+  dietTypeValues,
+} from "@/types/diet-data";
 
 const dietSchema = z.object({
   nome: z.string().min(2, "O nome é obrigatório"),
-  idade: z.number().int().positive(),
-  altura_cm: z.number().positive(),
-  peso_kg: z.number().positive(),
+  idade: z.number().int().positive("A idade deve ser maior que zero"),
+  altura_mm: z.number().int().positive("A altura deve ser maior que zero"),
+  peso_kg: z.number().positive("O peso deve ser maior que zero"),
   sexo: z.enum(["masculino", "feminino"], { message: "Selecione o sexo" }),
-  nivel_atividade: z.enum(["sedentario", "2x_semana", "4x_semana"], {
-    message: "Selecione o nível de atividade",
-  }),
-  objetivo: z.enum(["perda_de_peso", "hipertrofia", "manter_massa_muscular"], {
+  nivel_atividade: z
+    .number()
+    .int()
+    .min(1, "Selecione entre 1 e 7 dias")
+    .max(7, "Selecione entre 1 e 7 dias"),
+  objetivo: z.enum(dietObjectiveValues, {
     message: "Selecione o objetivo",
   }),
+  tipo_alimentacao: z.enum(dietTypeValues, {
+    message: "Selecione o tipo de alimentação",
+  }),
+  restricoes_alimentares: z.array(z.string()),
 });
 
 type DietSchemaFormData = z.infer<typeof dietSchema>;
 
+const emptyFormValues: DefaultValues<DietSchemaFormData> = {
+  nome: "",
+  idade: undefined,
+  altura_mm: undefined,
+  peso_kg: undefined,
+  sexo: undefined,
+  nivel_atividade: 3,
+  objetivo: undefined,
+  tipo_alimentacao: undefined,
+  restricoes_alimentares: [],
+};
+
 interface DietformProps {
-  onSubmit: (data: DietSchemaFormData) => void;
+  onSubmit: (data: DietData) => void;
+  initialValues?: DietData | null;
+  onClear?: () => void;
 }
 
-export function DietForm({ onSubmit }: DietformProps) {
+export function DietForm({ onSubmit, initialValues, onClear }: DietformProps) {
+  const [restricoesInput, setRestricoesInput] = useState("");
+  const [resetVersion, setResetVersion] = useState(0);
   const form = useForm<DietSchemaFormData>({
     resolver: zodResolver(dietSchema),
     defaultValues: {
-      nome: "",
-      idade: undefined,
-      altura_cm: undefined,
-      peso_kg: undefined,
-      sexo: undefined,
-      nivel_atividade: undefined,
-      objetivo: undefined,
+      ...emptyFormValues,
+      ...initialValues,
     },
   });
 
+  const restricoes = form.watch("restricoes_alimentares") ?? [];
+
+  function sanitizeTag(value: string) {
+    return value.trim().replace(/\s+/g, " ");
+  }
+
+  function parseTags(value: string) {
+    return value.split(",").map(sanitizeTag).filter(Boolean);
+  }
+
+  function mergeUniqueTags(current: string[], incoming: string[]) {
+    const unique = new Map<string, string>();
+
+    [...current, ...incoming].forEach((tag) => {
+      const normalized = tag.toLocaleLowerCase("pt-BR");
+      if (!unique.has(normalized)) {
+        unique.set(normalized, tag);
+      }
+    });
+
+    return Array.from(unique.values());
+  }
+
+  function commitRestricoes(rawValue: string) {
+    const parsed = parseTags(rawValue);
+
+    if (parsed.length === 0) {
+      setRestricoesInput("");
+      return;
+    }
+
+    form.setValue(
+      "restricoes_alimentares",
+      mergeUniqueTags(restricoes, parsed),
+      { shouldDirty: true, shouldValidate: true },
+    );
+    setRestricoesInput("");
+  }
+
+  function removeRestricao(tagToRemove: string) {
+    form.setValue(
+      "restricoes_alimentares",
+      restricoes.filter((tag) => tag !== tagToRemove),
+      { shouldDirty: true, shouldValidate: true },
+    );
+  }
+
+  function handleClear() {
+    form.reset(emptyFormValues);
+    setRestricoesInput("");
+    setResetVersion((current) => current + 1);
+    onClear?.();
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full lg:w-2/3 max-w-2x1 border-0">
+      <Card className="w-full lg:w-2/3 max-w-3xl border-0">
         <div className="p-8">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4 mx-auto">
@@ -163,15 +245,15 @@ export function DietForm({ onSubmit }: DietformProps) {
 
               <Controller
                 control={form.control}
-                name="altura_cm"
+                name="altura_mm"
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Altura em cm</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>Altura em mm</FieldLabel>
                     <FieldContent>
                       <Input
                         id={field.name}
                         type="number"
-                        step="any"
+                        step="1"
                         value={field.value ?? ""}
                         onBlur={field.onBlur}
                         name={field.name}
@@ -183,7 +265,7 @@ export function DietForm({ onSubmit }: DietformProps) {
                               : Number(e.target.value),
                           )
                         }
-                        placeholder="Ex: 1,75"
+                        placeholder="Ex: 175"
                         aria-invalid={fieldState.invalid}
                       />
                       <FieldError errors={[fieldState.error]} />
@@ -200,7 +282,8 @@ export function DietForm({ onSubmit }: DietformProps) {
                     <FieldLabel htmlFor={field.name}>Sexo</FieldLabel>
                     <FieldContent>
                       <Select
-                        value={field.value}
+                        key={`sexo-${resetVersion}`}
+                        value={field.value ?? undefined}
                         onValueChange={field.onChange}
                         name={field.name}
                       >
@@ -223,39 +306,53 @@ export function DietForm({ onSubmit }: DietformProps) {
               />
             </div>
 
-            {/* CAMPOS ATIVIDADE E NIVEL */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Controller
                 control={form.control}
                 name="nivel_atividade"
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>
-                      Nível de atividade
-                    </FieldLabel>
+                    <FieldLabel>Nível de atividade</FieldLabel>
                     <FieldContent>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        name={field.name}
+                      <RadioGroup
+                        value={String(field.value)}
+                        onValueChange={(value) => field.onChange(Number(value))}
+                        className="flex flex-wrap gap-2"
+                        aria-label="Selecione quantos dias por semana você pratica atividade física"
                       >
-                        <SelectTrigger
-                          id={field.name}
-                          className="w-full"
-                          aria-invalid={fieldState.invalid}
-                        >
-                          <SelectValue placeholder="Selecione o nível de atividade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sedentario">Sedentário</SelectItem>
-                          <SelectItem value="2x_semana">
-                            2x por semana
-                          </SelectItem>
-                          <SelectItem value="4x_semana">
-                            4x por semana
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                        {Array.from({ length: 7 }, (_, index) => index + 1).map(
+                          (day) => {
+                            const id = `nivel-atividade-${day}`;
+                            const selected = field.value === day;
+
+                            return (
+                              <div key={day}>
+                                <RadioGroupItem
+                                  id={id}
+                                  value={String(day)}
+                                  className="peer sr-only"
+                                  aria-label={`${day} ${day === 1 ? "dia" : "dias"} por semana`}
+                                />
+                                <label
+                                  htmlFor={id}
+                                  className={[
+                                    "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border text-sm font-semibold transition-colors sm:h-10 sm:w-10",
+                                    "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring",
+                                    selected
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-border bg-background text-foreground hover:border-primary/50",
+                                  ].join(" ")}
+                                >
+                                  {day}
+                                </label>
+                              </div>
+                            );
+                          },
+                        )}
+                      </RadioGroup>
+                      <FieldDescription>
+                        Selecione quantos dias por semana você treina.
+                      </FieldDescription>
                       <FieldError errors={[fieldState.error]} />
                     </FieldContent>
                   </Field>
@@ -270,7 +367,8 @@ export function DietForm({ onSubmit }: DietformProps) {
                     <FieldLabel htmlFor={field.name}>Objetivo</FieldLabel>
                     <FieldContent>
                       <Select
-                        value={field.value}
+                        key={`objetivo-${resetVersion}`}
+                        value={field.value ?? undefined}
                         onValueChange={field.onChange}
                         name={field.name}
                       >
@@ -279,18 +377,14 @@ export function DietForm({ onSubmit }: DietformProps) {
                           className="w-full"
                           aria-invalid={fieldState.invalid}
                         >
-                          <SelectValue placeholder="Selecione o seu objetivo" />
+                          <SelectValue placeholder="Selecione o objetivo" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="perda_de_peso">
-                            Perda de peso
-                          </SelectItem>
-                          <SelectItem value="hipertrofia">
-                            Hipertrofia
-                          </SelectItem>
-                          <SelectItem value="manter_massa_muscular">
-                            Manter massa muscular
-                          </SelectItem>
+                          {dietObjectiveValues.map((objective) => (
+                            <SelectItem key={objective} value={objective}>
+                              {dietObjectiveLabels[objective]}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FieldError errors={[fieldState.error]} />
@@ -300,9 +394,107 @@ export function DietForm({ onSubmit }: DietformProps) {
               />
             </div>
 
-            <Button className="w-full mt-6 hover:opacity-90 cursor-pointer">
-              Gerar minha dieta
-            </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                control={form.control}
+                name="tipo_alimentacao"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>
+                      Tipo de alimentação
+                    </FieldLabel>
+                    <FieldContent>
+                      <Select
+                        key={`tipo-alimentacao-${resetVersion}`}
+                        value={field.value ?? undefined}
+                        onValueChange={field.onChange}
+                        name={field.name}
+                      >
+                        <SelectTrigger
+                          id={field.name}
+                          className="w-full"
+                          aria-invalid={fieldState.invalid}
+                        >
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dietTypeValues.map((dietType) => (
+                            <SelectItem key={dietType} value={dietType}>
+                              {dietTypeLabels[dietType]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FieldError errors={[fieldState.error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
+
+              <Controller
+                control={form.control}
+                name="restricoes_alimentares"
+                render={({ fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="restricoes_alimentares">
+                      Restrições alimentares
+                    </FieldLabel>
+                    <FieldContent>
+                      <Input
+                        id="restricoes_alimentares"
+                        value={restricoesInput}
+                        onChange={(e) => setRestricoesInput(e.target.value)}
+                        onBlur={() => commitRestricoes(restricoesInput)}
+                        onKeyDown={(e) => {
+                          if (e.key === "," || e.key === "Enter") {
+                            e.preventDefault();
+                            commitRestricoes(restricoesInput);
+                          }
+                        }}
+                        placeholder="Ex: lactose, glúten, amendoim"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldDescription>
+                        Separe cada item por vírgula. As tags são enviadas como
+                        lista para a API.
+                      </FieldDescription>
+                      {restricoes.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {restricoes.map((tag) => (
+                            <Badge key={tag}>
+                              {tag}
+                              <button
+                                type="button"
+                                className="inline-flex cursor-pointer items-center"
+                                onClick={() => removeRestricao(tag)}
+                                aria-label={`Remover restrição ${tag}`}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <FieldError errors={[fieldState.error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="cursor-pointer"
+                onClick={handleClear}
+              >
+                Limpar
+              </Button>
+              <Button className="hover:opacity-90 cursor-pointer">
+                Gerar minha dieta
+              </Button>
+            </div>
           </form>
         </div>
       </Card>
